@@ -1,0 +1,48 @@
+#!/bin/sh
+
+SET="awg_domains"
+TABLE="fw4"
+DOMAINS_FILE="/etc/awg-domains.list"
+
+nft list set inet "$TABLE" "$SET" >/dev/null 2>&1 || exit 1
+
+# Telegram IP ranges
+nft add element inet "$TABLE" "$SET" "{ 91.108.4.0/22 }" 2>/dev/null
+nft add element inet "$TABLE" "$SET" "{ 91.108.8.0/22 }" 2>/dev/null
+nft add element inet "$TABLE" "$SET" "{ 91.108.12.0/22 }" 2>/dev/null
+nft add element inet "$TABLE" "$SET" "{ 91.108.16.0/22 }" 2>/dev/null
+nft add element inet "$TABLE" "$SET" "{ 91.108.20.0/22 }" 2>/dev/null
+nft add element inet "$TABLE" "$SET" "{ 91.108.56.0/22 }" 2>/dev/null
+nft add element inet "$TABLE" "$SET" "{ 149.154.160.0/20 }" 2>/dev/null
+
+# Meta/Facebook/Instagram IP ranges
+nft add element inet "$TABLE" "$SET" "{ 31.13.24.0/21 }" 2>/dev/null
+nft add element inet "$TABLE" "$SET" "{ 31.13.64.0/18 }" 2>/dev/null
+nft add element inet "$TABLE" "$SET" "{ 45.64.40.0/22 }" 2>/dev/null
+nft add element inet "$TABLE" "$SET" "{ 66.220.144.0/20 }" 2>/dev/null
+nft add element inet "$TABLE" "$SET" "{ 69.63.176.0/20 }" 2>/dev/null
+nft add element inet "$TABLE" "$SET" "{ 69.171.224.0/19 }" 2>/dev/null
+nft add element inet "$TABLE" "$SET" "{ 74.119.76.0/22 }" 2>/dev/null
+nft add element inet "$TABLE" "$SET" "{ 102.132.96.0/20 }" 2>/dev/null
+nft add element inet "$TABLE" "$SET" "{ 103.4.96.0/22 }" 2>/dev/null
+nft add element inet "$TABLE" "$SET" "{ 129.134.0.0/17 }" 2>/dev/null
+nft add element inet "$TABLE" "$SET" "{ 157.240.0.0/16 }" 2>/dev/null
+nft add element inet "$TABLE" "$SET" "{ 163.70.128.0/17 }" 2>/dev/null
+nft add element inet "$TABLE" "$SET" "{ 173.252.64.0/18 }" 2>/dev/null
+nft add element inet "$TABLE" "$SET" "{ 179.60.192.0/22 }" 2>/dev/null
+nft add element inet "$TABLE" "$SET" "{ 185.60.216.0/22 }" 2>/dev/null
+nft add element inet "$TABLE" "$SET" "{ 204.15.20.0/22 }" 2>/dev/null
+
+[ -f "$DOMAINS_FILE" ] || exit 0
+
+while read -r domain; do
+    [ -z "$domain" ] && continue
+    case "$domain" in \#*) continue ;; esac
+
+    nslookup "$domain" 127.0.0.1 2>/dev/null \
+        | awk '/^Address: / {print $2}' \
+        | grep -E '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$' \
+        | while read -r ip; do
+            nft add element inet "$TABLE" "$SET" "{ $ip }" 2>/dev/null
+        done
+done < "$DOMAINS_FILE"

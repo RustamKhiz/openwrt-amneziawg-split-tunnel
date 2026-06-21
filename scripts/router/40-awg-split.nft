@@ -1,0 +1,4 @@
+add set inet fw4 awg_domains { type ipv4_addr; flags interval; auto-merge; }
+
+add rule inet fw4 mangle_prerouting ip daddr @awg_domains meta mark set 0x00020000
+add rule inet fw4 mangle_output ip daddr @awg_domains meta mark set 0x00020000

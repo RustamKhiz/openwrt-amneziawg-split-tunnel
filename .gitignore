@@ -1,0 +1,10 @@
+router.env
+server.env
+*.conf
+*.key
+*.psk
+*.tar.gz
+*.ipk
+!templates/*.conf.example
+!packages/**/*.ipk
+!packages/.gitkeep

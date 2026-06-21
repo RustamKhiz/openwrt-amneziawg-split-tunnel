@@ -1,0 +1,33 @@
+#!/bin/sh /etc/rc.common
+
+START=95
+STOP=10
+
+AWG_IFACE="awg0"
+AWG_ADDR="10.8.1.3/32"
+AWG_MTU="1376"
+AWG_CONF="/etc/amneziawg/awg0.conf"
+AWG_MARK="0x20000/0xff0000"
+AWG_TABLE="100"
+AWG_ENV="/etc/amneziawg/router.env"
+
+[ -f "$AWG_ENV" ] && . "$AWG_ENV"
+
+start() {
+    modprobe amneziawg 2>/dev/null
+
+    ip link del "$AWG_IFACE" 2>/dev/null
+    ip link add "$AWG_IFACE" type amneziawg
+    ip address add "$AWG_ADDR" dev "$AWG_IFACE"
+    ip link set mtu "$AWG_MTU" dev "$AWG_IFACE"
+    awg setconf "$AWG_IFACE" "$AWG_CONF"
+    ip link set up dev "$AWG_IFACE"
+
+    ip route replace default dev "$AWG_IFACE" table "$AWG_TABLE"
+    ip rule add fwmark "$AWG_MARK" table "$AWG_TABLE" priority 10000 2>/dev/null
+}
+
+stop() {
+    ip rule del fwmark "$AWG_MARK" table "$AWG_TABLE" priority 10000 2>/dev/null
+    ip link del "$AWG_IFACE" 2>/dev/null
+}
