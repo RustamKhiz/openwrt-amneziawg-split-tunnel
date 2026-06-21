@@ -2,6 +2,8 @@
 
 Этот вариант раскладывает файлы на роутере и генерирует `/etc/amneziawg/awg0.conf` из `router.env`.
 
+Перед этим должен быть подготовлен VPS с AmneziaWG. См. [prerequisites.md](prerequisites.md).
+
 ## 1. Подготовить env
 
 ```sh
