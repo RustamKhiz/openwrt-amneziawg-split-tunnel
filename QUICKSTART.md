@@ -97,7 +97,34 @@ docker exec amnezia-awg2 awg set awg0 peer '<ROUTER_PUBLIC_KEY>' allowed-ips 10.
 docker exec amnezia-awg2 awg show
 ```
 
-Чтобы закрепить peer после рестарта контейнера, добавь его в `/opt/amnezia/awg/awg0.conf`.
+Команда `awg set` применяет peer только к текущему запущенному интерфейсу. После рестарта сервера или контейнера этот peer пропадет, если не сохранить его в конфиге.
+
+Закрепить peer в `/opt/amnezia/awg/awg0.conf`:
+
+```sh
+docker exec amnezia-awg2 sh -c '
+grep -q "<ROUTER_PUBLIC_KEY>" /opt/amnezia/awg/awg0.conf || cat >> /opt/amnezia/awg/awg0.conf <<EOF
+
+[Peer]
+PublicKey = <ROUTER_PUBLIC_KEY>
+AllowedIPs = 10.8.1.3/32
+EOF
+'
+```
+
+Проверить:
+
+```sh
+docker exec amnezia-awg2 sh -c "grep -A3 -B1 '<ROUTER_PUBLIC_KEY>' /opt/amnezia/awg/awg0.conf"
+```
+
+После рестарта контейнера peer должен появиться сам:
+
+```sh
+docker restart amnezia-awg2
+sleep 5
+docker exec amnezia-awg2 awg show
+```
 
 ## 5. Создать конфиг роутера
 

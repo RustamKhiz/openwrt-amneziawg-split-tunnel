@@ -43,3 +43,13 @@ ping -I awg0 -c 3 1.1.1.1
 ip rule | grep 100
 nft list set inet fw4 awg_domains | head -80
 ```
+
+## 5. Не забыть закрепить peer на сервере
+
+На сервере:
+
+```sh
+scripts/server/add-router-peer.sh '<ROUTER_PUBLIC_KEY>' 10.8.1.3/32
+```
+
+Этот скрипт не только вызывает `awg set`, но и добавляет peer в `/opt/amnezia/awg/awg0.conf`, чтобы настройка пережила рестарт сервера.
