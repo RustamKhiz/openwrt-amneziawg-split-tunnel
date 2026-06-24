@@ -82,3 +82,14 @@ nft list set inet fw4 awg_domains | head -80
 ```
 
 Подробно: [docs/troubleshooting.md](docs/troubleshooting.md).
+
+## Добавление сайтов в туннель
+
+После установки helper-а:
+
+```sh
+awg-add youtube instagram telegram chatgpt
+awg-add https://example.com/some/page
+```
+
+Для обычного сайта можно вставить ссылку. Для сложных сервисов лучше использовать готовый профиль сервиса.

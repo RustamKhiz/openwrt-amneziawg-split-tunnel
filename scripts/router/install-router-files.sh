@@ -49,6 +49,10 @@ chmod 600 /etc/amneziawg/awg0.conf
 
 cp /tmp/amneziawg-router.init /etc/init.d/amneziawg-router
 cp /tmp/update-awg-domains /usr/bin/update-awg-domains
+if [ -f /tmp/awg-add ]; then
+    cp /tmp/awg-add /usr/bin/awg-add
+    chmod +x /usr/bin/awg-add
+fi
 cp /tmp/40-awg-split.nft /usr/share/nftables.d/ruleset-post/40-awg-split.nft
 cp /tmp/awg-domains.list /etc/awg-domains.list
 

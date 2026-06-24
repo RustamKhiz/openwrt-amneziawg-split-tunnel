@@ -165,6 +165,7 @@ ping -I awg0 -c 3 1.1.1.1
 ```sh
 scp -O scripts/router/40-awg-split.nft root@192.168.1.1:/tmp/
 scp -O scripts/router/update-awg-domains root@192.168.1.1:/tmp/
+scp -O scripts/router/awg-add root@192.168.1.1:/tmp/
 scp -O templates/awg-domains.list.example root@192.168.1.1:/tmp/awg-domains.list
 ```
 
@@ -173,8 +174,10 @@ scp -O templates/awg-domains.list.example root@192.168.1.1:/tmp/awg-domains.list
 ```sh
 cp /tmp/40-awg-split.nft /usr/share/nftables.d/ruleset-post/40-awg-split.nft
 cp /tmp/update-awg-domains /usr/bin/update-awg-domains
+cp /tmp/awg-add /usr/bin/awg-add
 cp /tmp/awg-domains.list /etc/awg-domains.list
 chmod +x /usr/bin/update-awg-domains
+chmod +x /usr/bin/awg-add
 
 /etc/init.d/firewall restart
 /usr/bin/update-awg-domains
@@ -199,3 +202,15 @@ nft list set inet fw4 awg_domains | head -120
 ```
 
 Если `transfer` растет, сервис идет через VPN.
+
+## 9. Добавлять новые сайты проще
+
+После установки:
+
+```sh
+awg-add youtube instagram telegram chatgpt
+awg-add https://example.com/some/page
+awg-add example.org
+```
+
+Для обычного сайта достаточно URL или домена. Для сложных сервисов лучше использовать готовое имя сервиса, например `instagram`, `youtube`, `telegram`, `chatgpt`.

@@ -20,6 +20,40 @@ sort -u /etc/awg-domains.list -o /etc/awg-domains.list
 nft list set inet fw4 awg_domains | head -120
 ```
 
+## Упрощенное добавление
+
+На роутер можно установить helper:
+
+```sh
+scp -O scripts/router/awg-add root@192.168.1.1:/tmp/awg-add
+cp /tmp/awg-add /usr/bin/awg-add
+chmod +x /usr/bin/awg-add
+```
+
+Использование:
+
+```sh
+awg-add youtube instagram telegram chatgpt
+awg-add https://example.com/some/page
+awg-add example.org
+```
+
+Команда сама:
+
+- определяет известный сервис или домен;
+- добавляет домены в `/etc/awg-domains.list`;
+- убирает дубли;
+- запускает `/usr/bin/update-awg-domains`;
+- показывает preview nft-set.
+
+Для сложных сервисов лучше использовать имя сервиса, а не только URL. Например:
+
+```sh
+awg-add instagram
+```
+
+добавит не только `instagram.com`, но и CDN-домены Meta.
+
 ## Особые случаи
 
 ### Telegram

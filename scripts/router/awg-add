@@ -1,0 +1,156 @@
+#!/bin/sh
+
+set -eu
+
+DOMAINS_FILE="${AWG_DOMAINS_FILE:-/etc/awg-domains.list}"
+UPDATE_CMD="${AWG_UPDATE_CMD:-/usr/bin/update-awg-domains}"
+
+usage() {
+    cat <<'EOF'
+Usage:
+  awg-add SERVICE_OR_URL [SERVICE_OR_URL...]
+
+Examples:
+  awg-add youtube instagram telegram
+  awg-add https://example.com/some/page
+  awg-add example.org
+
+Known services:
+  telegram youtube instagram meta chatgpt openai codex discord reddit x twitter
+  linkedin tiktok netflix spotify speedtest claude gemini steam notion figma
+EOF
+}
+
+add_domains() {
+    while [ "$#" -gt 0 ]; do
+        [ -n "$1" ] && echo "$1" >> "$DOMAINS_FILE"
+        shift
+    done
+}
+
+add_meta_ranges_to_updater_hint() {
+    # IP ranges are maintained in update-awg-domains. This helper only adds domains.
+    :
+}
+
+normalize_host() {
+    input="$1"
+
+    input="${input#http://}"
+    input="${input#https://}"
+    input="${input#ftp://}"
+    input="${input%%/*}"
+    input="${input%%\?*}"
+    input="${input%%#*}"
+    input="${input%%:*}"
+    input="$(echo "$input" | tr 'A-Z' 'a-z')"
+
+    # Drop a single leading www; both root and www are added later.
+    input="${input#www.}"
+
+    echo "$input"
+}
+
+add_site() {
+    host="$(normalize_host "$1")"
+
+    case "$host" in
+        ""|*/*|*" "*|localhost|127.*|10.*|192.168.*)
+            echo "Skip unsupported input: $1" >&2
+            return 0
+            ;;
+    esac
+
+    add_domains "$host" "www.$host"
+}
+
+add_service() {
+    service="$(echo "$1" | tr 'A-Z' 'a-z')"
+
+    case "$service" in
+        telegram|tg)
+            add_domains telegram.org t.me telegram.me telegra.ph web.telegram.org api.telegram.org core.telegram.org desktop.telegram.org updates.tdesktop.com
+            ;;
+        youtube|yt)
+            add_domains youtube.com www.youtube.com m.youtube.com youtu.be youtubei.googleapis.com youtube.googleapis.com googlevideo.com redirector.googlevideo.com ytimg.com i.ytimg.com yt3.ggpht.com ggpht.com youtube-nocookie.com googleusercontent.com
+            ;;
+        instagram|insta|meta|facebook|fb)
+            add_meta_ranges_to_updater_hint
+            add_domains instagram.com www.instagram.com i.instagram.com b.i.instagram.com graph.instagram.com api.instagram.com cdninstagram.com scontent.cdninstagram.com fbcdn.net fna.fbcdn.net facebook.com www.facebook.com graph.facebook.com connect.facebook.net static.xx.fbcdn.net external.xx.fbcdn.net video.xx.fbcdn.net messenger.com m.me threads.net
+            ;;
+        chatgpt|openai|codex)
+            add_domains chatgpt.com chat.openai.com chatgpt.livekit.cloud openai.com www.openai.com api.openai.com auth.openai.com platform.openai.com codex.openai.com cdn.oaistatic.com oaistatic.com files.oaiusercontent.com oaiusercontent.com ab.chatgpt.com ios.chat.openai.com android.chat.openai.com events.statsigapi.net featuregates.org
+            ;;
+        discord)
+            add_domains discord.com discord.gg discordapp.com discordapp.net cdn.discordapp.com media.discordapp.net
+            ;;
+        reddit)
+            add_domains reddit.com www.reddit.com old.reddit.com redd.it redditmedia.com redditstatic.com
+            ;;
+        x|twitter)
+            add_domains x.com twitter.com www.twitter.com api.twitter.com pbs.twimg.com video.twimg.com t.co twimg.com
+            ;;
+        linkedin)
+            add_domains linkedin.com www.linkedin.com licdn.com lnkd.in
+            ;;
+        tiktok)
+            add_domains tiktok.com www.tiktok.com vm.tiktok.com tiktokcdn.com tiktokv.com byteoversea.com ibytedtos.com
+            ;;
+        netflix)
+            add_domains netflix.com www.netflix.com nflxvideo.net nflximg.net nflxext.com nflxso.net nflxsearch.net
+            ;;
+        spotify)
+            add_domains spotify.com www.spotify.com open.spotify.com spoti.fi scdn.co spotifycdn.com spotifycdn.net
+            ;;
+        speedtest)
+            add_domains speedtest.net www.speedtest.net ookla.com www.ookla.com speed.cloudflare.com fast.com
+            ;;
+        claude)
+            add_domains claude.ai anthropic.com console.anthropic.com api.anthropic.com
+            ;;
+        gemini)
+            add_domains gemini.google.com ai.google.dev aistudio.google.com generativelanguage.googleapis.com bard.google.com
+            ;;
+        steam)
+            add_domains steamcommunity.com store.steampowered.com steampowered.com steamstatic.com steamcdn-a.akamaihd.net
+            ;;
+        notion)
+            add_domains notion.ai www.notion.ai notion.so www.notion.so
+            ;;
+        figma)
+            add_domains figma.com www.figma.com static.figma.com
+            ;;
+        *)
+            return 1
+            ;;
+    esac
+}
+
+[ "$#" -gt 0 ] || {
+    usage
+    exit 1
+}
+
+touch "$DOMAINS_FILE"
+
+for item in "$@"; do
+    if add_service "$item"; then
+        echo "Added service: $item"
+    else
+        add_site "$item"
+        echo "Added site: $(normalize_host "$item")"
+    fi
+done
+
+sort -u "$DOMAINS_FILE" -o "$DOMAINS_FILE"
+
+if [ -x "$UPDATE_CMD" ]; then
+    "$UPDATE_CMD"
+else
+    echo "Warning: update command not found: $UPDATE_CMD" >&2
+fi
+
+echo
+echo "Domains file: $DOMAINS_FILE"
+echo "Current nft set preview:"
+nft list set inet fw4 awg_domains 2>/dev/null | head -120 || true
